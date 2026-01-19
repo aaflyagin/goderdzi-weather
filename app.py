@@ -1,14 +1,24 @@
+from flask import Flask, jsonify
+import requests
+from bs4 import BeautifulSoup
+import os
+import re, json
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Goderdzi weather API is working"
+
 @app.route("/weather")
 def weather():
     url = "https://www.snow-forecast.com/resorts/Goderdzi/6day/mid"
     html = requests.get(url, headers={"User-Agent":"Mozilla/5.0"}).text
 
-    import re, json
-
     match = re.search(r'var resortForecast = ({.*?});', html, re.S)
 
     if not match:
-        return jsonify({"error":"forecast not found"})
+        return jsonify({"error": "forecast not found"})
 
     data = json.loads(match.group(1))
 
@@ -27,3 +37,7 @@ def weather():
         "tomorrow_snow": snow[1],
         "after_snow": snow[2]
     })
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
