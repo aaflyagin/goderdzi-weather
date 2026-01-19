@@ -1,38 +1,29 @@
-from flask import Flask, jsonify
-import requests
-from bs4 import BeautifulSoup
-import os
-
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "Goderdzi weather API is working"
-
 @app.route("/weather")
 def weather():
     url = "https://www.snow-forecast.com/resorts/Goderdzi/6day/mid"
     html = requests.get(url, headers={"User-Agent":"Mozilla/5.0"}).text
-    soup = BeautifulSoup(html, "html.parser")
+
+    import re, json
+
+    match = re.search(r'var resortForecast = ({.*?});', html, re.S)
+
+    if not match:
+        return jsonify({"error":"forecast not found"})
+
+    data = json.loads(match.group(1))
 
     temps = []
     snow = []
 
-    for row in soup.select("tr"):
-        if "Temperature" in row.text:
-            temps = [td.text.strip() for td in row.select("td span")]
-        if "Snow" in row.text:
-            snow = [td.text.strip() for td in row.select("td span")]
+    for day in data["forecast"][:3]:
+        temps.append(str(day["temp"]["mid"]) + "°C")
+        snow.append(str(day["snow"]["mid"]) + " cm")
 
     return jsonify({
-        "today_temp": temps[0] if len(temps)>0 else "",
-        "tomorrow_temp": temps[1] if len(temps)>1 else "",
-        "after_temp": temps[2] if len(temps)>2 else "",
-        "today_snow": snow[0] if len(snow)>0 else "",
-        "tomorrow_snow": snow[1] if len(snow)>1 else "",
-        "after_snow": snow[2] if len(snow)>2 else ""
+        "today_temp": temps[0],
+        "tomorrow_temp": temps[1],
+        "after_temp": temps[2],
+        "today_snow": snow[0],
+        "tomorrow_snow": snow[1],
+        "after_snow": snow[2]
     })
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
