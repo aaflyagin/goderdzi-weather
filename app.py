@@ -1,8 +1,13 @@
 from flask import Flask, jsonify
 import requests
 from bs4 import BeautifulSoup
+import os
 
 app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Goderdzi weather API is working"
 
 @app.route("/weather")
 def weather():
@@ -22,4 +27,6 @@ def weather():
         "after_snow": snow[2] if len(snow)>2 else ""
     })
 
-app.run(host="0.0.0.0", port=10000)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
