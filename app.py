@@ -15,8 +15,14 @@ def weather():
     html = requests.get(url, headers={"User-Agent":"Mozilla/5.0"}).text
     soup = BeautifulSoup(html, "html.parser")
 
-    temps = [x.text for x in soup.select(".forecast-table-temp span")]
-    snow = [x.text for x in soup.select(".forecast-table-snow span")]
+    temps = []
+    snow = []
+
+    for row in soup.select("tr"):
+        if "Temperature" in row.text:
+            temps = [td.text.strip() for td in row.select("td span")]
+        if "Snow" in row.text:
+            snow = [td.text.strip() for td in row.select("td span")]
 
     return jsonify({
         "today_temp": temps[0] if len(temps)>0 else "",
