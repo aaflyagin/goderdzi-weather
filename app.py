@@ -1,8 +1,6 @@
 from flask import Flask, jsonify
 import requests
-from bs4 import BeautifulSoup
 import os
-import re, json
 
 app = Flask(__name__)
 
@@ -12,30 +10,26 @@ def home():
 
 @app.route("/weather")
 def weather():
-    url = "https://www.snow-forecast.com/resorts/Goderdzi/6day/mid"
-    html = requests.get(url, headers={"User-Agent":"Mozilla/5.0"}).text
+    url = (
+        "https://api.open-meteo.com/v1/forecast"
+        "?latitude=41.635503"
+        "&longitude=42.491022"
+        "&daily=temperature_2m_max,temperature_2m_min,snowfall_sum"
+        "&timezone=auto"
+    )
 
-    match = re.search(r'var resortForecast = ({.*?});', html, re.S)
-
-    if not match:
-        return jsonify({"error": "forecast not found"})
-
-    data = json.loads(match.group(1))
-
-    temps = []
-    snow = []
-
-    for day in data["forecast"][:3]:
-        temps.append(str(day["temp"]["mid"]) + "°C")
-        snow.append(str(day["snow"]["mid"]) + " cm")
+    data = requests.get(url).json()
+    days = data["daily"]
 
     return jsonify({
-        "today_temp": temps[0],
-        "tomorrow_temp": temps[1],
-        "after_temp": temps[2],
-        "today_snow": snow[0],
-        "tomorrow_snow": snow[1],
-        "after_snow": snow[2]
+        "today_temp": f'{days["temperature_2m_min"][0]}°C / {days["temperature_2m_max"][0]}°C',
+        "today_snow": f'{days["snowfall_sum"][0]} cm',
+
+        "tomorrow_temp": f'{days["temperature_2m_min"][1]}°C / {days["temperature_2m_max"][1]}°C',
+        "tomorrow_snow": f'{days["snowfall_sum"][1]} cm',
+
+        "after_temp": f'{days["temperature_2m_min"][2]}°C / {days["temperature_2m_max"][2]}°C',
+        "after_snow": f'{days["snowfall_sum"][2]} cm'
     })
 
 if __name__ == "__main__":
